@@ -1,0 +1,119 @@
+\chapter{Cíle práce}
+
+V~této kapitole si detailně popíšeme cíle, kterých se budeme snažit dosáhnout. Zbylé kapitoly budou řešit některé z~cílů uvedených zde.
+
+\section{Terminologie}\label{data-terminologie}
+
+\begin{itemize}
+    \item \textbf{Dostupnost} definujeme jako dobu, za jakou se ze vstupního místa dostaneme na cílové místo. S~takto definovanou dostupností se nám, v~porovnání s~konkrétními časy, bude snáze pracovat ve statistických výpočtech.\label{definice-dostupnosti}
+    
+    \item \textbf{Místo} je nějaká pozice v~prostoru, která není příliš vzdálená od některé ze zastávek. V~této práci zásadně odlišujeme význam místa a~zastávky.
+
+    \item \textbf{Zastávka} je místo, na kterém staví nějaký spoj.
+
+    \item \textbf{Trip} překládáme jako \textbf{jízdu}. Jízda je posloupnost zastávek.
+    
+    \item \textbf{Route} překládáme jako \textbf{trasu}. Trasa je množina jízd jedoucích přes stejné zastávky.
+    
+    V~kapitole~\ref{kapitola-1} však pracujeme s~\textbf{GTFS trasou}, jejíž definice se liší od definice trasy, kterou používáme v~následujících kapitolách. GTFS trasy totiž mohou obsahovat jízdy, které jedou přes různé množiny zastávek.
+    
+    \item \textbf{Transfers} překládáme jako \textbf{přestupy}. Přestupovat můžeme mezi dvěma zastávkami a~přestup trvá nějaký čas.
+    
+    \item \textbf{Spoj} používáme pro nějaký dopravní prostředek, který jede v~konkrétní čas po zastávkách jízdy. %podobnost s TripWithDate v impl.
+    
+    \item \textbf{Journey} překládáme jako cestu. Cesta je posloupnost spojů a~přestupů, kterými se dopravíme z~počátečního místa na cílové.
+
+\end{itemize}
+
+
+\section{Požadavky na aplikaci}
+% trosku to souvisi s implementaci ze sekce 5.4 kde aplikaci popisuju - i kdyz tam ale popisuju existujici design
+
+\subsubsection{Frontend by měl:}
+\begin{itemize}
+    \item Poskytovat rozhraní pro zadávání vstupu uživatelem.
+    
+    Uživatel může zadávat více často navštěvovaných míst.
+    
+    Zadané místo musí být v~dostatečné blízkosti nějaké zastávky.
+    
+    S~místem lze asociovat důležitost, která určuje, jak moc je dostupnost z~tohoto místa zohledněna ve vypočtených dostupnostech.
+    
+    Uživatel může s~jedním místem asociovat více časů, ve kterých chce z~místa odjíždět.
+    
+    Uživatel má mít možnost nezadávat čas přesně, ale nechat aplikaci vyhodnotit dostupnost pro nějaké okolí zadaného času.
+    
+    \item Poskytovat rozhraní pro zobrazování výstupu uživateli.
+    
+    Na výstupu se uživateli vizualizuje vypočtená dostupnost.
+    
+    Dostupnost má být vizualizovaná na všech místech.
+    
+    Uživatel má být ve vizualizaci schopen snadno najít dostupnost pro konkrétní místa.
+    
+    \item Posílat požadavky na backend, který běží na serveru.
+\end{itemize}
+
+\subsubsection{Backend by měl:}
+\begin{itemize}
+    \item Zpracovávat dotazy z~frontendu v~rozumném čase. % maximálně jednotky sekund
+    
+    \item Aktualizovat data jízdních řádů.
+    
+    \item Delegovat vyhodnocení dostupnosti na knihovnu.
+\end{itemize}
+
+\subsubsection{Knihovna by měla:} %sjednoceni s backendem ???
+\begin{itemize}
+    \item Být nezávislá na webové aplikaci.
+    
+    \item Dostatečně obecná, aby mohla pracovat s~jízdními řády po celém světě.
+    
+    \item Načítat data jízdních řádů a~přetransformovat je do formátu vhodného pro vyhledávání.
+    
+    \item Pro daný vstup vyhodnocovat dostupnost na všech místech. % klicova cast prace
+\end{itemize}
+
+
+\section{Problémy k~řešení}
+
+
+\subsubsection{Data}\label{problemyKReseni-data}
+
+Nejprve potřebujeme mít přístup k~datům jízdních řádů. Bez samotných dat se nemůžeme pokoušet vyhodnocovat dostupnost.
+
+
+\subsubsection{Vyhodnocení dostupnosti}\label{problemyKReseni-dostupnost}
+
+Pro vyhodnocení dostupnosti musíme nejprve nalézt cesty, které vedou mezi vstupními a~výstupními místy. Tento problém si rozdělíme na následující podproblémy, které budeme postupně řešit.
+
+\begin{itemize}
+    \item Vyhledání cesty mezi 2 zastávkami. To je klasický problém, který řeší běžné vyhledávače.
+    
+    \item Vyhledání cesty mezi 1 vstupní zastávkou a~všemi ostatními zastávkami. Toto je důležité, neboť cílíme na vyhodnocení dostupnosti na všech místech. Vyhodnocení dostupnosti na všech zastávkách je tedy přirozený mezikrok.
+    
+    \item Zadávání více vstupních zastávek. Vstupní zastávky jsou ty, které uživatel zadává jako často navštěvovaná místa. Takových zastávek je, v~porovnání se všemi zastávkami, velmi málo. Tento mezikrok potřebujeme, abychom uživatelům umožnili zadávat více často navštěvovaných míst.
+    
+    \item Zobecnění cílové zastávky na místo. V~této fázi jsme již schopni vyhodnocovat dostupnost na všech zastávkách. Abychom byli schopni vyhodnocovat dostupnost na libovolných místech, potřebujeme zobecnit zastávky na místa.
+    
+    \item Zobecnění vstupní zastávky na místo. Toto zobecnění potřebujeme, neboť chceme našim uživatelům umožnit zadávat na vstupu libovolná místa, ne jen zastávky.
+    
+    \item Vyhledávání oběma směry. Předchozí podproblémy počítají se situací, kdy uživatelem zadaná místa jsou ta, ze kterých chce vyjíždět. Uživatele by však mohla zajímat situace, kdy na zadaná místa chce v~daný čas přijíždět. Tuto možnost mají některé vyhledávače, které umožňují vyhledávat spoje dle času dojezdu.
+    
+    \item Vyhodnocování dostupnosti pro časový interval. Vyřešení tohoto podproblému by umožnilo uživatelům nezadávat vstupní čas přesně. Mohli bychom totiž vyhodnocovat dostupnost pro nějaké okolí zadaného času.
+\end{itemize}
+
+
+\subsubsection{Vizualizace}\label{problemyKReseni-vizualizace}
+
+Potřebujeme zajistit způsob vizualizace, který uživatelům umožní dohledat ideální místo podle dostupnosti.
+
+Potřebujeme najít způsob, jak vizualizovat dostupnost pro všechna místa.
+
+% usnadnili orientaci ve výsledcích a~umožnili jim snadné vyhledávání nejdostupnějších míst
+
+
+
+% chybi prestupy? ---- to vsak zalezi i na datech, v tuhle chvili to tedy nejspise neni problem
+
+% v dalsich kapitolach se chci odkazovat na pozadavky, ktere prave resim

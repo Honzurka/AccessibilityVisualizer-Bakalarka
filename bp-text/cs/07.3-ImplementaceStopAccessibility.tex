@@ -1,0 +1,58 @@
+\section{Modul StopAccessibility}\label{modul-StopAccessibility}
+
+V~tomto modulu zobecňujeme vyhledávání implementované ve třídě \textbf{Raptor} podle metod popsaných v~kapitole~\ref{kapitola-3}. Konkrétně umožňujeme vyhledávání dostupnosti na libovolném výstupním místě, viz sekce~\ref{zobecneni-ciloveZastavkyNaMista}, vyhledávání z~více vstupních míst, viz sekce~\ref{zobecneni-viceVstupnichMist} a~výpočet dostupnosti v~intervalu, viz sekce~\ref{zobecneni-dostupnostVIntervalu}.
+
+Uvnitř tohoto modulu stále pracujeme s~časovým názvoslovím, které jsme popsali již v~sekci~\ref{NazvosloviCasu}.
+
+
+\subsection{Třída NearestStops}\label{class-NearestStops}
+
+Třída \textbf{NearestStops} obsahuje pomocnou metodu \textbf{GetStopsWithWalkTime}. Touto metodou nalezneme sousední zastávky do maximální vzdálenosti, dané konstantou \textbf{DISTANCE\_LIMIT}, od zadaných souřadnic. Konstantu \textbf{DISTANCE\_LIMIT} načítáme z~konfiguračního souboru. Pro každou z~nalezených sousedních zastávek navíc počítáme čas který potřebujeme, abychom na zastávku došli pěší chůzí ze zadaných souřadnic. Pro efektivní vyhledávání sousedních zastávek využíváme optimalizaci zmíněnou v~sekci~\ref{optim-sousedi}.
+
+\subsection{Třída StopAccessibilityFinder}
+
+Základními interními metodami této třídy jsou metody \textbf{GetAvgTravelTimeByStop} a~\textbf{CalcAccessibility}.
+
+\subsubsection{Metoda GetAvgTravelTimeByStop}
+
+Za pomoci této metody agregujeme dostupnosti z~více zdrojů. V~případě, že jsou specifikovány váhy, agregujeme dostupnosti váženým průměrem. V~případě že váhy nejsou specifikovány, použijeme standardní průměr.
+
+Uvnitř metody nejprve sčítáme dostupnosti na jednotlivých zastávkách a~odstraňujeme zastávky, které nejsou dostupné z~některého ze vstupních míst. Následně počítáme průměr z~dostupností.
+
+\subsubsection{Metoda CalcAccessibility}\label{Metoda-CalcAccessibility}
+
+V~metodě \textbf{CalcAccessibility} postupně procházíme vstupní zastávky. Pro každou vstupní zastávku nalezneme, s~pomocí metody \textbf{GetStopsWithWalkTime}, sousední zastávky, které dále využíváme k~výpočtu dostupností naší upravenou verzí algoritmu RAPTOR.
+
+Každá vstupní zastávka může mít přidruženo větší množství počátečních dat s~časy. Dostupnosti pro každé datum a~čas počítáme zvlášť a~následně je průměrujeme metodou \textbf{GetAvgTravelTimeByStop}.
+
+V~případě, že je metoda \textbf{CalcAccessibility} volaná s~parametry pro interval, počítáme navíc dostupnost pro každý čas v~intervalu. Tento postup jsme popsali již v~sekci~\ref{zobecneni-dostupnostVIntervalu}. Výsledky z~intervalu se opět průměrují metodou \textbf{GetAvgTravelTimeByStop}.
+
+\subsubsection{Zobecnění vyhledávání na více vstupních míst}
+
+Toto zobecnění jsme popsali v~sekci~\ref{zobecneni-viceVstupnichMist} a~zajišťují jej metody \textbf{GetAvgAccessByStop} a~\textbf{GetStatisticalAvgAccessByStop}. Obě metody využívají metodu \textbf{CalcAccessibility} pro ohodnocení jednotlivých zastávek a~výsledné dostupnosti průměrují metodou \textbf{GetAvgTravelTimeByStop}.
+
+\subsubsection{Zobecnění vyhledávání na libovolné výstupní místo}
+
+Toto zobecnění jsme popsali již v~sekci~\ref{zobecneni-ciloveZastavkyNaMista}. Zobecnění je implementováno metodami \textbf{GetAccessForCoords} a~\textbf{GetAccessForCoordNbors}.
+
+Metoda \textbf{GetAccessForCoords} pro zadané souřadnice nejprve nalezne sousední zastávky a~čas potřebný pro jejich dosažení chůzí pomocí metody \textbf{GetStopsWithWalkTime} a~následně volá metodu \textbf{GetAccessForCoordNbors}.
+
+Metoda \textbf{GetAccessForCoordNbors} je také součástí API, neboť pro vyhodnocení dostupnosti na velkém množství míst pro nás opakované hledání sousedních zastávek může znamenat výrazné zpomalení. Pro velké množství míst si můžeme sousední zastávky předpočítat a~následně využít tuto metodu. Využití této metody jsme popsali již v~sekci~\ref{optim-body}.
+
+V~samotné metodě \textbf{GetAccessForCoordNbors} nejprve vypočteme dostupnosti pomocí metody \textbf{CalcAccessibility}. Následně procházíme všechny vstupní zastávky a~pro každou z~nich nalezneme zastávku sousedící se zadanými souřadnicemi, skrze kterou se na zadané souřadnice dostaneme nejrychleji. Dostupnost takto nalezené zastávky nám vyjadřuje dostupnost ze vstupní zastávky na zadané souřadnice. Ohodnocením místa na zadaných souřadnicích je vážený průměr dostupností ze všech vstupních zastávek.
+
+\subsection{Možná zlepšení}
+
+\subsubsection{Lepší výpočet vzdálenosti}
+
+Aktuálně počítáme vzdálenost jako vzdálenost vzdušnou čarou. To je dosti nepřesné. Na stejný problém jsme narazili při generování přestupů a~navrhované řešení jsme popsali v~sekci~\ref{optim-prestupy}.
+
+\subsubsection{Redundance u~přidružení více dat s~časy ke vstupní zastávce}
+
+Každá vstupní zastávka může mít přidružených více počátečních dat s~časy. V~tuto chvíli počítáme dostupnost pro každý z~časů zvlášť. To však může být velice neefektivní.
+
+V~případě, že by uživatel zadal stejné časy pro po sobě jdoucí všední dny, například pondělí a~úterý, může se stát že se pro tyto dny jízdní řády vůbec neliší. Počítáme tedy dvakrát to samé.
+
+Takových případů může být více. Prozatím nenavrhujeme žádné řešení, jen poukazujeme na možnou redundanci.
+
+% upravoval jsem API, puvodni navrh nebyl vhodny pro pouziti z webu - asi nema cenu zminovat

@@ -1,0 +1,66 @@
+﻿@page
+@using StopAccessibility;
+@model Web.Pages.FinderModel
+@{
+}
+
+<div id="stopPositionLimits"
+     data-min-lat="@Model.timetable.StopPositionLimits.minLat.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+     data-max-lat="@Model.timetable.StopPositionLimits.maxLat.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+     data-min-lon="@Model.timetable.StopPositionLimits.minLon.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+     data-max-lon="@Model.timetable.StopPositionLimits.maxLon.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+</div>
+<div id="allowedDates"
+     data-start-date="@Model.FormatDateTimeOffset(Model.timetable.StartDate)"
+     data-end-date="@Model.FormatDateTimeOffset(Model.timetable.EndDate)">
+</div>
+
+
+<h1>Hledač</h1>
+<div id="map" class="map"></div>
+<div id="accessibilityFilter" hidden>
+    Zobrazí jen místa s dostupností do
+    <input type="range" min="0" max="100" />
+    <input type="number" min="0" />
+    minut
+</div>
+
+<form id="StopSearchForm">
+    <select id="stops">
+        <option value="">--Vyber název zastávky--</option>
+        @foreach(var stop in Model.timetable.GetStops().OrderBy(s => s.Name))
+        {
+            <option value="@stop.Id">@stop.Name</option>
+		}
+    </select>
+    <button id="StopSearchFormBtn" type="submit">Přidat zastávku</button>
+</form>
+
+<form id="FinderForm">
+    @Html.AntiForgeryToken()
+    <fieldset>
+        <label for="visualizationType">Co se bude vizualizovat:</label>
+        <select class="form-select" id="visualizationType">
+            @foreach (var (key, text) in Model.visualizationTypes)
+            {
+                <option value="@key">@text</option>
+            }
+        </select>
+    </fieldset>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="CalculateStatistics">
+        <label class="form-check-label" for="CalculateStatistics">Výpočet v intervalu (přesnější, ale náročnější výpočet) - jen pro zastávky.</label>
+    </div>
+    <button class="btn btn-primary">Hledat</button>
+</form>
+
+<table id="MostAccessibleStops" class="table table-dark">
+
+</table>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script src="~/lib/v6.12.0-dist/ol.js"></script>
+    <script src="~/js/map.js"></script>
+}

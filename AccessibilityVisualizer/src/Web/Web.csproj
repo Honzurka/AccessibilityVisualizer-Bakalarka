@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib\GTFSData\GTFSData.csproj" />
+    <ProjectReference Include="..\..\lib\RaptorAlgo\RaptorAlgo.csproj" />
+    <ProjectReference Include="..\..\lib\StopAccessibility\StopAccessibility.csproj" />
+  </ItemGroup>
+
+</Project>

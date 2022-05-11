@@ -1,0 +1,68 @@
+\chapter{Přílohy}
+
+%sekce pro kod programu ? - Elektronicka priloha
+
+\section{Dokumentace}
+
+\subsubsection{Uživatelská dokumentace}
+
+Uživatelská dokumentace je součástí webové stránky. Konkrétně je popsaná na úvodní stránce. Pro jednodušší přístup přikládáme uživatelskou dokumentaci do elektronické přílohy této práce.
+
+\subsubsection{Programátorská dokumentace}
+
+Programátorská dokumentace je obecně popsaná v~kapitole~\ref{kapitola-Implementace}. Dokumentace kódu je vytvořena pomocí XML komentářů. Samotný kód přikládáme v~elektronické příloze.
+
+
+\subsection{Instalace}
+
+\subsubsection{Prerekvizity}
+
+Ke spuštění či překladu aplikace potřebujeme platformu .NET~5.0, která je k~dispozici na stránkách Microsoftu\footnote{Ke stažení na stránce \url{https://dotnet.microsoft.com/en-us/download/dotnet/5.0}}.
+
+Instalace platformy .NET~5.0 nám zpřístupní příkaz \textbf{dotnet}, pomocí kterého aplikaci spustíme. Alternativně můžeme ke spuštění využít nástroje poskytované prostředím \textbf{Visual Studia}.
+
+\subsubsection{Spuštění}
+
+Aplikaci přeložíme zavoláním příkazu \textbf{dotnet build} z~adresáře obsahujícího aplikaci.
+
+Příkaz \textbf{dotnet run -{}-project src/Web/Web.csproj} použijeme ke spuštění naší webové aplikace.
+
+Pro ověření funkčnosti aplikace můžeme spustit \textbf{Unit Testy} pomocí příkazu \textbf{dotnet test}.
+
+
+\subsection{Konfigurační soubor}
+
+% popsat ze je urcen pro spravce webove aplikace, ktery ho meni
+
+\subsubsection{GTFS data}
+
+Konstanta \textbf{ShouldUpdate} určuje, zdali chceme při spuštění aplikace data aktualizovat, viz popis třídy \textbf{DataUpdater} v~sekci~\ref{trida-DataUpdater}. Při aktualizaci dojde ke stažení dat a~k~jejich deserializaci. Pokud data neaktualizujeme, serializujeme dříve uložená data.
+
+URL pro stažení dat specifikujeme konstantou \textbf{GTFSSourceURI}. Aktuálně podporujeme jen data archivovaná ve formátu zip.
+
+% mohla by byt podsekce `zpracovani dat`
+Data stahujeme do složky určené konstantou \textbf{PathToGTFSFolder} a~cestu k~serializaci určuje konstanta \textbf{GTFSSerializationPath}.
+
+Platnost dat závisí na konkrétním zprostředkovateli a~dá se nastavit skrze konstantu \textbf{ValidityInDays}.
+
+UTC offset pro časy jízdních řádů, které uchováváme na serveru, lze nastavit konstantou \textbf{UTCOffset}.
+
+\subsubsection{Přestupy}
+
+Generování přestupů popisujeme v~sekci~\ref{generovani-prestupu}.
+
+Konstantu \textbf{MaxTransferDistanceInMeters} používáme pro omezení vzdálenosti během generování přestupů.
+
+Konstantu \textbf{WalkingSpeedInMetersPerSec} určuje průměrnou rychlost chůze. Používáme ji k~odhadu času potřebného pro přestup.
+
+\subsubsection{Sousední zastávky}
+
+Sousední zastávky detailně popisujeme v~sekci~\ref{class-NearestStops}.
+
+Konstantu \textbf{WalkingSpeedInMetersPerSec} používáme také pro odhad času potřebného k~příchodu z~nějakého místa na zastávky v~okolí.
+
+Konstanta \textbf{NearestStopsDistanceInMeters} omezuje vzdálenost, ve které hledáme z~daného místa sousední zastávky.
+
+\subsubsection{Vizualizace bodů}
+
+Konstanta \textbf{VisualisedRasterPointsResolution} určuje rozlišení, pro které vizualizujeme dostupnost v~bodech, viz sekce~\ref{optim-body}.

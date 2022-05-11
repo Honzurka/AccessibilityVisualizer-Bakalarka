@@ -1,0 +1,7 @@
+% Metadata k uložení do PDF, podrobnější popis viz dokumentace balíčku pdfx.
+
+\Author{Jan Fürst}
+\Title{Vizualizace dostupnosti veřejnou dopravou}
+\Keywords{GTFS\sep RAPTOR\sep vizualizace dostupnosti}
+\Subject{Mnoho lidí jezdí denně veřejnou dopravou a~mnohým z~nich by pomohlo, kdyby bydleli na místě ze kterého se dopraví rychleji na jimi často navštěvovaná místa. Problém však je, jak takové místo k~bydlení najít. To řešíme v~naší webové aplikaci, ve které zobecňujeme klasické vyhledávání cest v~jízdních řádech a~umožňujeme tak vyhodnocovat dostupnost z~uživatelem zadaných míst na všechna ostatní místa. Pro snadné vyhledávání vizualizujeme, na všech dostupných místech, vypočtenou dostupnost v~interaktivní mapě. Naše webová aplikace pracuje s~interní knihovnou, která zpřístupňuje funkcionalitu potřebnou pro vyhodnocení dostupnosti. Tuto knihovnu lze využít samostatně a~řešit tak jiné problémy, které vyžadují vyhodnocení dostupnosti veřejnou dopravou.}
+\Publisher{Univerzita Karlova}

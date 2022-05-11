@@ -1,0 +1,199 @@
+%%% Hlavní soubor. Zde se definují základní parametry a odkazuje se na ostatní části. %%%
+
+%% Verze pro jednostranný tisk:
+% Okraje: levý 40mm, pravý 25mm, horní a dolní 25mm
+% (ale pozor, LaTeX si sám přidává 1in)
+\documentclass[12pt,a4paper]{report}
+\setlength\textwidth{145mm}
+\setlength\textheight{247mm}
+\setlength\oddsidemargin{15mm}
+\setlength\evensidemargin{15mm}
+\setlength\topmargin{0mm}
+\setlength\headsep{0mm}
+\setlength\headheight{0mm}
+% \openright zařídí, aby následující text začínal na pravé straně knihy
+\let\openright=\clearpage
+
+%% Pokud tiskneme oboustranně:
+% \documentclass[12pt,a4paper,twoside,openright]{report}
+% \setlength\textwidth{145mm}
+% \setlength\textheight{247mm}
+% \setlength\oddsidemargin{14.2mm}
+% \setlength\evensidemargin{0mm}
+% \setlength\topmargin{0mm}
+% \setlength\headsep{0mm}
+% \setlength\headheight{0mm}
+% \let\openright=\cleardoublepage
+
+%% Vytváříme PDF/A-2u
+\usepackage[a-2u]{pdfx}
+
+%% Přepneme na českou sazbu a fonty Latin Modern
+\usepackage[czech]{babel}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+
+%% Použité kódování znaků: obvykle latin2, cp1250 nebo utf8:
+\usepackage[utf8]{inputenc}
+
+%%% Další užitečné balíčky (jsou součástí běžných distribucí LaTeXu)
+\usepackage{amsmath}        % rozšíření pro sazbu matematiky
+\usepackage{amsfonts}       % matematické fonty
+\usepackage{amsthm}         % sazba vět, definic apod.
+\usepackage{bbding}         % balíček s nejrůznějšími symboly
+			    % (čtverečky, hvězdičky, tužtičky, nůžtičky, ...)
+\usepackage{bm}             % tučné symboly (příkaz \bm)
+\usepackage{graphicx}       % vkládání obrázků ------ reduce data usage=======================================================================================================================================================
+
+\usepackage{fancyvrb}       % vylepšené prostředí pro strojové písmo
+\usepackage{indentfirst}    % zavede odsazení 1. odstavce kapitoly
+\usepackage{natbib}         % zajištuje možnost odkazovat na literaturu
+			    % stylem AUTOR (ROK), resp. AUTOR [ČÍSLO]
+\usepackage[nottoc]{tocbibind} % zajistí přidání seznamu literatury,
+                            % obrázků a tabulek do obsahu
+\usepackage{icomma}         % inteligetní čárka v matematickém módu
+\usepackage{dcolumn}        % lepší zarovnání sloupců v tabulkách
+\usepackage{booktabs}       % lepší vodorovné linky v tabulkách
+\usepackage{paralist}       % lepší enumerate a itemize
+\usepackage{xcolor}         % barevná sazba
+
+ % vlastni pridavky--------------------------------------------------------
+\usepackage{microtype}
+\usepackage{hyphenat}
+\usepackage[section]{placeins} %obrazky zustavaji ve stejne sekci
+
+
+%%% Údaje o práci
+
+% Název práce v jazyce práce (přesně podle zadání)
+\def\NazevPrace{Vizualizace dostupnosti veřejnou dopravou}
+
+% Název práce v angličtině
+\def\NazevPraceEN{Travel Times Visualization Based on Public Transport Timetable}
+
+% Jméno autora
+\def\AutorPrace{Jan Fürst}
+
+% Rok odevzdání
+\def\RokOdevzdani{2022}
+
+% Název katedry nebo ústavu, kde byla práce oficiálně zadána
+% (dle Organizační struktury MFF UK, případně plný název pracoviště mimo MFF)
+\def\Katedra{Katedra teoretické informatiky a matematické logiky}
+\def\KatedraEN{Department of Theoretical Computer Science and Mathematical Logic}
+
+% Jedná se o katedru (department) nebo o ústav (institute)?
+\def\TypPracoviste{Katedra}
+\def\TypPracovisteEN{Department}
+
+% Vedoucí práce: Jméno a příjmení s~tituly
+\def\Vedouci{Mgr. Martin Pilát, Ph.D.}
+
+% Pracoviště vedoucího (opět dle Organizační struktury MFF)
+\def\KatedraVedouciho{Katedra teoretické informatiky a matematické logiky}
+\def\KatedraVedoucihoEN{Department of Theoretical Computer Science and Mathematical Logic}
+
+% Studijní program a obor
+\def\StudijniProgram{Informatika}
+\def\StudijniObor{Programování a softwarové systémy}
+
+% Nepovinné poděkování (vedoucímu práce, konzultantovi, tomu, kdo
+% zapůjčil software, literaturu apod.)
+\def\Podekovani{%
+Rád bych poděkoval panu Mgr. Martinu Pilátovi, Ph.D. za cenné rady při vedení mé práce. Dále bych rád poděkoval členům své rodiny za podporu během psaní bakalářské práce.
+}
+
+% Abstrakt (doporučený rozsah cca 80-200 slov; nejedná se o zadání práce)
+\def\Abstrakt{
+% problem - popis kontextu problemu
+Mnoho lidí jezdí denně veřejnou dopravou a~mnohým z~nich by pomohlo, kdyby bydleli na místě ze kterého se dopraví rychleji na jimi často navštěvovaná místa. Problém však je, jak takové místo k~bydlení najít.
+% nase reseni + hlavni prinos
+To řešíme v~naší webové aplikaci, ve které zobecňujeme klasické vyhledávání cest v~jízdních řádech a~umožňujeme tak vyhodnocovat dostupnost z~uživatelem zadaných míst na všechna ostatní místa. Pro snadné vyhledávání vizualizujeme, na všech dostupných místech, vypočtenou dostupnost v~interaktivní mapě.
+% (mozna) abstrakce zaveru: komu by se to mohlo hodit
+Naše webová aplikace pracuje s~interní knihovnou, která zpřístupňuje funkcionalitu potřebnou pro vyhodnocení dostupnosti. Tuto knihovnu lze využít samostatně a~řešit tak jiné problémy, které vyžadují vyhodnocení dostupnosti veřejnou dopravou.
+}
+\def\AbstraktEN{
+%problem
+People often use public transport to travel to places they visit on regular basis. For these people, it would be very useful if they could live in a~place, from which they could get faster to all the places they visit. The problem is how to find such a~place.
+%our solution
+This problem is what we are trying to solve in our web application. By generalizing the standard public transport search we make it possible to calculate the travel times from user-defined places to all other reachable places. We visualize calculated travel times in an interactive map to simplify the search for the suitable place with the lowest travel times.
+%usefulnes
+Our web application uses our internal library which contains the functionality required for travel time calculations. This library could be used independently on the web application to solve other problems that require evaluation of travel times by public transport.
+}
+
+% 3 až 5 klíčových slov (doporučeno), každé uzavřeno ve složených závorkách
+\def\KlicovaSlova{%
+{GTFS}, {RAPTOR}, {Vizualizace dostupnosti}
+}
+\def\KlicovaSlovaEN{%
+{GTFS}, {RAPTOR}, {Travel Times Visualization}
+}
+
+%% Balíček hyperref, kterým jdou vyrábět klikací odkazy v PDF,
+%% ale hlavně ho používáme k uložení metadat do PDF (včetně obsahu).
+%% Většinu nastavítek přednastaví balíček pdfx.
+\hypersetup{unicode}
+\hypersetup{breaklinks=true}
+
+%% Definice různých užitečných maker (viz popis uvnitř souboru)
+\include{makra}
+
+%% Titulní strana a různé povinné informační strany
+\begin{document}
+\include{titulka}
+
+%%% Strana s automaticky generovaným obsahem bakalářské práce
+
+\tableofcontents
+
+%%% Jednotlivé kapitoly práce jsou pro přehlednost uloženy v samostatných souborech
+
+\include{uvod}
+
+\include{01-PozadavkyNaAplikaci}
+\include{02-DataJizdnichRadu}
+\include{03-HledaniSpoju}
+\include{04-VlastniUpravyRaptora}
+\include{05-ZobecneniVyhledavani}
+\include{06-Vizualizace}
+\include{07-Implementace}
+\include{07.1-ImplementaceGTFSData}
+\include{07.2-ImplementaceRaptorAlgo}
+\include{07.3-ImplementaceStopAccessibility}
+\include{07.4-ImplementaceWeb}
+\include{07.5-ImplementaceConfig}
+\include{08-Vysledky}
+
+\include{zaver}
+
+%%% Seznam použité literatury
+\include{literatura}
+
+%%% Obrázky v bakalářské práci
+%%% (pokud jich je malé množství, obvykle není třeba seznam uvádět)
+\listoffigures
+
+%%% Tabulky v bakalářské práci (opět nemusí být nutné uvádět)
+%%% U matematických prací může být lepší přemístit seznam tabulek na začátek práce.
+%\listoftables
+
+%%% Použité zkratky v bakalářské práci (opět nemusí být nutné uvádět)
+%%% U matematických prací může být lepší přemístit seznam zkratek na začátek práce.
+%\chapwithtoc{Seznam použitých zkratek}
+
+%%% Přílohy k bakalářské práci, existují-li. Každá příloha musí být alespoň jednou
+%%% odkazována z vlastního textu práce. Přílohy se číslují.
+%%%
+%%% Do tištěné verze se spíše hodí přílohy, které lze číst a prohlížet (dodatečné
+%%% tabulky a grafy, různé textové doplňky, ukázky výstupů z počítačových programů,
+%%% apod.). Do elektronické verze se hodí přílohy, které budou spíše používány
+%%% v elektronické podobě než čteny (zdrojové kódy programů, datové soubory,
+%%% interaktivní grafy apod.). Elektronické přílohy se nahrávají do SISu a lze
+%%% je také do práce vložit na CD/DVD. Povolené formáty souborů specifikuje
+%%% opatření rektora č. 72/2017.
+\appendix
+\include{09-Prilohy}
+
+\openright
+\end{document}

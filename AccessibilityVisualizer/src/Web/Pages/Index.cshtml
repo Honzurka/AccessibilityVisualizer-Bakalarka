@@ -1,0 +1,79 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Hledac dostupnosti";
+}
+
+<div class="text-justify">
+    <h1 class="display-4">Vítej, já jsem hledač dostupnosti.</h1>
+    <h2>Co dělám</h2>
+    <p>
+        Vypočítávám dostupnost linkami PIDu (Pražskou integrovanou dopravou).
+        Zadej místo a čas, kdy chceš ze zadaných míst vyjíždět a já ti zobrazím dostupnost na všechna ostatní místa.
+    </p>
+    <h2>Jak mě můžeš použít</h2>
+    <p>
+        Pokud hledáš nové místo k bydlení a nejsi si jistý, odkud se na svá často navštěvovaná místa dostaneš nejrychleji, jsi na správném místě.
+        Stačí když mi zadáš často navštěvovaná místa a čas, ve který z nich chceš odjíždět a já ti ohodnotím ostatní místa a pomůžu ti nalézt to nejdostupnější.
+    </p>
+    <h2>Co všechno umím a jak toho můžeš využít</h2>
+    <p>
+        Samotný hledač najdeš v horní liště pod názvem <a href="/Finder">Hledat</a>.
+    </p>
+    <h3>Značky</h3>
+    <p>
+        Pro označení míst používám značky. Vypadají takhle: <img src="~/data/icon.png" alt="znacka">
+    </p>
+    <p>
+        Značku přídáš kliknutím na prázdné místo v mapě.
+        Pokud bys chtěl označit konkrétni zastávku, můžeš ji přidat skrze formulář pod mapou.
+        Výběrem a následným přidáním zastávky dojde také k umístění značky do mapy.
+    </p>
+    <p>
+        Značku smažeš tak, že na ni klikneš v mapě.
+    </p>
+    <p>
+        Pokud chceš značku posunout na jiné místo, stačí když jí přesuneš myší.
+    </p>
+    <h3>Formulář se vstupními místy</h3>
+    <p>
+        Každá přidaná značka rozšiřuje formulář pod mapou. Značky jsou označeny čísly, stejná číslo má i řádka formuláře, která značce odpovídá.
+    </p>
+    <p>
+        Každé řádka formuláře označuje místo. Každé místo má přiřazené datum a čas, kdy z tohoto místa chceš vyjíždět.
+    </p>
+    <p>
+        Kliknutím na tlačítka <button type="button" class="btn btn-success">+</button> a <button type="button" class="btn btn-danger">-</button>
+        můžeš přidávat a odebírat datum a čas pro vybrané místo.
+    </p>
+    <p>
+        Pro každé místo můžeš také zvolit váhu. Ta určuje, jak důležitá je pro tebe dostupnost z tohoto místa.
+        Čím větší je váha, tím důležitější je dostupnost z místa.
+    </p>
+    <p>
+        Umím zobrazovat dostupnost na všechny zastávky a na pravidelně rozmístěné body v rastru.
+        To, co po mně budeš chtít zobrazit, si můžeš nastavit ve formuláři pod řádkou <q>Co se bude vizualizovat</q>.
+    </p>
+    <p>
+        Pokud k místům nezadáváš zcela přesné časy a chtěl bys vypočítat dostupnosti pro blízké okolí zadaného času a tím zvýšit přesnost vypočtené dostupnosti,
+        zaškrtni ve formuláři <q>Výpočet v intervalu</q>.
+    </p>
+    <p>
+        Pro vyhodnocení formuláře je potřeba jej odeslat. To provedeš kliknutím na tlačítko <button class="btn btn-primary">Hledat</button>.
+    </p>
+    <h3>Zobrazená dostupnost</h3>
+    <p>
+        Po vyhodnocení zobrazím na mapě barevý bod pro každé místo s dostupností.
+        Tmavou barvou označím méně dostupná místa a světlou barvou označím dostupnější místa.
+    </p>
+    <p>
+        Pro snazší hledání nejdostupnějších míst můžeš využít posuvník, který omezuje maximální zobrazovanou dostupnost.
+    </p>
+    <h3>Chyby</h3>
+    <p>
+        Každé zadané místo musíš umístit do okolí maximálně jednoho kilometru od nějaké zastávky.
+        Pokud se ti to nepovede, nahlásím ti chybu a <span class="bg-danger">červeně zvýrazním</span> místo, které v okolí žádnou zastávku nemá.
+    </p>
+    <h2>Kód projektu</h2>
+    <p>Kód projektu je dostupný na <a href="https://github.com/Honzurka/RocnikovyProjekt">GitHubu</a>.</p>
+</div>

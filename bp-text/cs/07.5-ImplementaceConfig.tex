@@ -1,0 +1,30 @@
+\section{Modul Config}
+% vsude chybi ref na config??----------
+
+Tento modul zpřístupňuje data potřebná ke konfiguraci naší aplikace.
+% mozna dopsat neco jako -> dynamicke zmeny: napr. obsah konstant - upravuji vyhledavani | ukladani souboru | ...
+
+
+\subsubsection{Konfigurační soubor}
+
+Konfigurační soubor \textbf{appsettings.json} obsahuje konfigurační data, která lze ručně modifikovat.
+
+Soubor je psaný ve formátu JSON. Formát JSON jsme zvolili, neboť je poměrně populární, dobře čitelný a~stručný, srovnáme-li ho například s~formátem XML (Extensible Markup Language).
+
+
+\subsubsection{Načtení dat konfiguračního souboru}
+
+Načítání dat zajišťuje třída \textbf{AppConfig}. V~této třídě jsme pomocí statického konstruktoru zajistili, že k~načtení konfiguračních dat dojde při prvním přístupu k~jejich hodnotám.
+
+Třída \textbf{AppPath} nám zajišťuje, že můžeme se souborovými cestami pracovat relativně vůči adresáři projektu.
+
+V~původním návrhu jsme soubor \textbf{appsettings.json} nechávali kopírovat do výstupního adresáře a~následně jsme pracovali s~kopii tohoto souboru. To však vedlo ke vzniku kopie pro každý modul a~dokonce docházelo k~chybám, kdy nedošlo k~překopírování souboru \textbf{appsettings.json} do některého z~modulů. Rozhodli jsme se tedy pracovat s~tímto souborem přímo.
+
+
+\subsubsection{Přístup k~načteným datům}
+
+Pro přístup k~datům jsme vytvořili datovou třídu \textbf{AppSettings}. Položky této třídy zrcadlí strukturu souboru \textbf{appsettings.json}. Abychom zajistili typovaný přístup k~datům, využíváme \textbf{options pattern}\footnote{Detailní popis lze najít na adrese \url{https://docs.microsoft.com/en-us/dotnet/core/extensions/options}}.
+
+Práci nám usnadňuje rozšíření \textbf{Microsoft.Extensions.Configuration}.
+
+Instanci \textbf{AppSettings} vytváříme ve třídě \textbf{AppConfig}, ta ji také zpřístupňuje skrze položku \textbf{appSettings}.

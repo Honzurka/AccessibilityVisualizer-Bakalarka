@@ -1,0 +1,92 @@
+\section{Modul RaptorAlgo}
+
+Tento modul implementuje algoritmus RAPTOR, viz kapitola~\ref{kapitola-2}, který používáme k~vyhledávání nejrychlejší cesty ze zadané zastávky, v~daný čas a~den, na ostatní zastávky. Implementace algoritmu nám navíc umožňuje zadávat více vstupních zastávek, čímž implementujeme zobecnění zastávky na místo, popsané v~sekci~\ref{raptor-zobecneni-vicePocatecnichZastavek}.
+
+
+\subsection{Existující implementace}
+
+Před samotnou implementací tohoto modulu jsme prozkoumali alternativní možnosti, které by nám mohli práci usnadnit. Tyto možnosti lze zařadit do dvou kategorií. Knihovny, umožňující vyhledávání v~jízdních řádech a~již existující implementace algoritmu RAPTOR.
+
+\subsubsection{Knihovny}
+
+Mezi námi zkoumané knihovny patří \textbf{OpenTripPlanner}\footnote{Dostupná na githubu, viz~\url{https://github.com/opentripplanner/OpenTripPlanner}} a~\textbf{Itinero}\footnote{Více informací lze dohledat na stránce \url{http://www.itinero.tech/}}.
+
+\textbf{OpenTripPlanner} je knihovna psaná v~jazyku Java, což je jazyk, který spíše nepreferujeme pro tvorbu této aplikace.
+
+\textbf{Itinero} je knihovna pro jazyk C\#.
+
+Tyto knihovny však neřeší přímo náš problém. Abychom knihovny využili, museli bychom buď přepsat jejich část, nebo adaptovat naše řešení na možnosti knihoven.
+
+Zmíněné knihovny řeší široké spektrum problémů a~jsou tedy velice komplexní. Z~toho důvodu jsou jakékoliv jejich úpravy značně složité. Nová implementace algoritmu RAPTOR se zdá být snazší, než přepisování části existující knihovny.
+
+Adaptace našeho problému na možnosti knihoven se nezdá být vůbec snadná.
+
+V~případě, že bychom přece jen byli schopni adaptaci zprovoznit, by toto řešení stále nebylo ideální. Naše poměrně malá knihovna by totiž závisela na mnohem větší knihovně, jejíž funkcionalitu bychom využívali jen ve velmi malé míře.
+
+\subsubsection{Existující implementace algoritmu RAPTOR}\label{raptor-existujici-implementace}
+
+Existující implementace by nám kromě ušetření času mohly poskytnout také optimalizované řešení, což by zaručilo rychlý běh algoritmu. Mezi nejrychlejší implementace algoritmu by patřily ty, napsané v~jazyku C/C++. Takové implementace bychom z~naší knihovny, psané v~jazyku C\#, mohli volat pomocí technologie \textbf{P/Invoke}.
+
+\begin{enumerate}
+    \item Implementace\footnote{Implementace je dostupná na githubu, viz \url{https://github.com/lviennot/hl-csa-raptor}} psaná v~jazyku C++. Tato implementace s~sebou bohužel nenese dokumentaci. Samotný kód se zdá být dosti nestrukturovaný, možná i~z~optimalizačních důvodů. To je však důvod, proč se provedení námi navrhovaných změn algoritmu zdá být v~této implementaci příliš pracné.
+    \item Další dostupná implementace\footnote{Implementace je dostupná na githubu, viz \url{https://github.com/ducminh-phan/RAPTOR}}, psaná v~jazyku C++, bohužel také neobsahuje dokumentaci. Zdá se však, že je tato implementace trochu lépe strukturovaná. Při spuštění jsme však narazili na problém, že implementace předpokládá typované hodnoty v~GTFS datech. Formát GTFS však žádné typy nevynucuje. Například pro \textbf{trip\_id} knihovna předpokládá numerický typ, zatímco data společnosti PID jsou pod položkou \textbf{trip\_id} uloženy v~řetězcovém typu. Z~tohoto důvodu se nám ani nepodařilo spustit implementaci na našich datech.
+    \item Poslední zkoumaná implementace\footnote{Implementace je dostupná na gitlabu, viz \url{https://gitlab.fel.cvut.cz/kasnezde/raptor}} je psaná v~jazyku Java. Tato implementace je dobře dokumentovaná a~její kód je přehledný. Tuto knihovnu jsme nevyužili, neboť naší aplikaci chceme psát v~jazyku C\#. Posloužila však jako inspirace pro naší implementaci a~usnadnila nám tak práci.
+\end{enumerate}
+
+Ze zmíněných implementací není žádná zcela vyhovující. Z~toho důvodu jsme se rozhodli implementovat si algoritmus RAPTOR sami.
+
+\subsection{Třída Raptor}
+
+Touto třídou reprezentujeme vyhledávač cest. Velká část implementace jen realizuje myšlenky popsané v~kapitole~\ref{kapitola-2}.
+
+\subsubsection{Názvosloví pro práci s~časem}\label{NazvosloviCasu}
+
+V~této třídě používáme často následující názvosloví pro práci s~různými časy.
+\begin{itemize}
+    \item \textbf{Walk time} --- doba trvání pěší cesty z~daného místa na zastávku.
+    \item \textbf{Travel time} --- doba strávená na cestě jedoucím spojem.
+    \item \textbf{Departure time} --- čas výjezdu spoje ze zastávky. 
+    \item \textbf{Arrival time} --- čas příjezdu spoje na zastávku.
+    \item \textbf{Start time} --- čas, od kterého začínáme vyhledávání.
+    \item \textbf{Accessibility} --- dostupnost, neboli doba která uplynula mezi nejdřívějším \textbf{arrival time} a~\textbf{start time}, viz sekce~\ref{definice-dostupnosti}.
+\end{itemize}
+
+\subsubsection{Zajímavosti lišící se od implementace z~článku}
+
+Vytvářením jízd pro každé datum kdy spoj jede, viz \textbf{TripWithDate} popsaný v~sekci~\ref{TripWithDate}, vzniká velký počet jízd. Tento nárůst počtu jízd může zpomalit běh metody \textbf{GetEarliestTripFromStop}, která vyhledává nejdřívější jízdu, na kterou můžeme z~dané zastávky nastoupit. Jednoduchou optimalizací je použití binárního vyhledávání pro nalezení hledané jízdy.
+
+Metoda \textbf{Init} v~naší implementaci navíc označuje i~sousedy vstupní zastávky. Bez označení sousedů by algoritmus nenašel přestupy ze vstupní zastávky na zastávky v~jejím okolí. Důvodem je to, že v~první fázi algoritmu použijeme označenou vstupní zastávku k~označení tras a~zrušíme existující označení zastávek. Ve třetí fázi, kde aplikujeme přestupy z~označených zastávek, už není vstupní zastávka označena, tudíž přestupy z~ní nejsou nikdy využity.
+
+Třída navíc obsahuje metodu \textbf{GetTravelTimeByStops}, která zpřístupňuje dostupnosti na zastávkách, které jsme vypočítali během vyhledávání. Tato metoda slouží jako propojení tohoto modulu s~modulem \textbf{StopAccessibility}, popsaným v~sekci~\ref{modul-StopAccessibility}.
+
+\subsubsection{Možné zlepšení}
+
+Tento modul nepředpokládá běžné využívání hodnoty \textbf{TotalRounds}, která omezuje počet přestupů v~nalezených cestách. Pro ohodnocení dostupnosti na všech dosažitelných místech sice tohoto omezení nevyužíváme, ale některé uživatele knihovny by vedle dostupnosti mohl zajímat i~počet přestupů. Tato změna by vyžadovala úpravu API tohoto modulu.
+
+
+\subsection{Třída StopData}
+
+Touto třídou reprezentujeme vypočtená data asociovaná se zastávkou. Jedná se zejména o~\textbf{multilabel arrivalTimes}, který pro každé kolo obsahuje nejdřívější příjezdové časy. Dále třída obsahuje \textbf{transfer}, \textbf{previousStop}, \textbf{trip}, která slouží k~vypisování cesty, viz sekce~\ref{RaptorAlgo-journey}.
+
+\textbf{Multilabel arrivalTimes} rozšiřujeme líně, tedy až v~případě nutnosti. Příjezdové časy \textbf{multilabelu} pro neexistující a~nová kola vrací konstantu \textbf{UNREACHABLE}, která reprezentuje hodnotu nekonečno, jak jsme popsali již v~inicializaci algoritmu RAPTOR v~sekci~\ref{raptor-popisAlgo}.
+
+Všechna vypočtená \textbf{StopData}, pro dosažitelné zastávky, uchováváme ve třídě \textbf{StopsData}, jenž slouží jako wrapper nad dictionary.
+
+
+\subsection{Třída Journey} \label{RaptorAlgo-journey}
+
+\textbf{Journey} jsme v~počáteční fázi vývoje používali k~vypisování cest mezi zadaným vstupním a~výstupním místem, kterou RAPTOR nalezl.
+
+S~touto třídou je spojena logika tříd \textbf{Raptor} a~\textbf{StopData}. Když ve třídě \textbf{Raptor} dojde během vyhledávání k~aktualizaci \textbf{arrival\_time}, voláme na instanci \textbf{StopData}, asociované s~danou zastávkou, metodu \textbf{ArriveByTransfer} či \textbf{ArriveByTrip}. V~těchto metodách dochází k~uložení úseku cesty vedoucí na danou zastávku.
+
+\subsubsection{Využití}
+
+Tuto funkcionalitu v~naší aplikaci již nevyužíváme. Třídu \textbf{Journey} jsme však zachovali, neboť ji hojně využíváme při testování třídy \textbf{Raptor}.
+
+Pokud by však uživatele naší knihovny zajímala cesta, kterou se dostanou ze zadaných míst na některé konkrétní místo. Můžeme cestu poměrně snadno vyhledat, využitím právě této třídy.
+
+\subsection{Možné optimalizace}
+
+Naše implementace algoritmu RAPTOR je napsaná v~jazyku C\#. Pro optimálnější běh algoritmu by však bylo vhodnější zvolit jazyk C++. Implementaci psanou v~jazyku C++ bychom mohli z~naší aplikace volat pomocí technologie P/Invoke, jak už jsme zmiňovali v~sekci~\ref{raptor-existujici-implementace}.
+
+Algoritmus lze také optimalizovat využitím paralelizace, viz kapitola~\ref{raptor-paralelizace}.

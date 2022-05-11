@@ -1,0 +1,162 @@
+\section{Modul GTFSData}
+
+V~tomto modulu načítáme data jízdních řádů a~následně je zpracováváme. Součástí modulu jsou také pomocné funkce, které usnadňují práci s~projekcí WGS84 a~se zpracováním času.
+
+Hlavní třídy modulu jsou:
+\begin{itemize}
+    \item RawData, která načítá data ze souborů formátu GTFS.
+    \item Timetable, která načítá data do datových struktur vhodných pro vyhledávání.
+\end{itemize}
+
+
+\subsection{Třída RawData}\label{rawdata}
+
+V~této třídě implementujeme myšlenky, popsané v~kapitole~\ref{kapitola-1}. Třída obsahuje specifikaci dat, která budeme načítat do paměti ze souborů formátu GTFS. Formát GTFS jsme popsali již v~sekci~\ref{gtfs-popis}.
+
+Pro snazší parsování GTFS dat ve formě CSV používáme knihovnu \textbf{CsvHelper}. Tato knihovna, mimo jiné, určuje formát ve kterém popisujeme specifikaci parsovaných dat.
+
+Při parsování \textbf{arrival\_time} a~\textbf{departure\_time} ze souboru \textbf{stop\_times} převádíme časy na \textbf{TimeSpan}, který nám umožňuje ukládat kromě času i~případné dny. Tímto způsobem ukládání dat se vyhneme problému s~časy, které přesahují klasický 24 hodinový formát.
+
+Datum parsujeme do struktury \textbf{DateTimeOffset}. UTC posun určujeme v~pomocné třídě \textbf{TimeConverter}. Naše implementace určuje UTC posun dle hodnoty \textbf{UTCOffset} z~konfiguračního souboru.
+
+\subsubsection{Možnost rozšíření o~jiný formát dat}
+
+Implementaci třídy \textbf{RawData} můžeme nahradit, za podmínky dodržení specifikovaného rozhraní \textbf{IRawData}. To nám umožní pracovat s~daty jízdních řádu v~jiném formátu než je formát GTFS. Například bychom mohli pracovat s~daty ve formátu JDF, popsaném v~kapitole~\ref{kapitola-1}.
+
+
+\subsection{Třída Timetable}\label{class-timetable}
+
+Touto třídou reprezentujeme datové struktury uchovávající data jízdních řádů ve formě vhodné pro vyhledávání. Potřebná data jsme popsali již v~sekci~\ref{raptor-data}. Součástí této třídy jsou také metody, pomocí nichž stavíme zmíněné datové struktury.
+
+Třída \textbf{Timetable} závisí na datech jízdních řádu, které ji poskytneme skrze rozhraní popsané výše v~sekci~\ref{rawdata}. Využívá návrhový vzor \textbf{Singleton}, který zajišťuje, že v~aplikaci bude existovat jen jediná instance této třídy. To je velice užitečné, neboť v~aplikaci pracujeme jen s~jedněmi daty jízdních řádů a~ty nechceme duplikovat.
+
+\subsubsection{Popis datových struktur}
+
+\begin{itemize}
+    \item Struktura \textbf{Transfer}
+    
+    Touto strukturou popisujeme přestupy mezi zastávkami. Obsahuje čas přestupu a~zdrojovou a~cílovou zastávku.
+    
+    \item Struktura \textbf{Stop}
+
+    Strukturou \textbf{Stop} reprezentujeme zastávky z~jízdních řádů. Obsahuje kolekci přestupů mezi zastávkami a~seznam tras, na kterých se zastávky nachází.
+    
+    Pro optimálnější hledání sousedních zastávek využíváme optimalizace popsané v~sekci~\ref{optim-sousedi}. Důsledkem této optimalizace je \textbf{Stop} potomkem \textbf{ISpatialData}.
+
+    \item Struktura \textbf{StopTime}
+    
+    Tato struktura obsahuje informace o~příjezdu a~odjezdu z~odpovídající zastávky.
+
+    \item Struktura \textbf{TripWithDate}\label{TripWithDate}
+    
+    Pomocí struktury \textbf{TripWithDate} reprezentujeme jízdu jedoucí v~konkrétním datu. Každá jízda obsahuje kolekci \textbf{StopTime}.
+    
+    Jelikož každá jízda může jet v~několika dnech, tedy i~několika datech, vedl by tento přístup k~redundantnímu ukládání kolekcí \textbf{StopTime}.
+    
+    Abychom tomu předešli, vytvořili jsme pomocnou strukturu \textbf{Trip}, která obsahuje informace sdílené mezi stejnými jízdami, včetně kolekce \textbf{StopTime}. Samotná struktura \textbf{TripWithDate} udržuje referenci na Trip a~přidává k~ní datum.
+    
+    \item Struktura \textbf{Route}
+    
+    Touto strukturou reprezentujeme trasu ve významu popsaném v~kapitole~\ref{kapitola-2}. Obsahuje množinu jízd, jedoucích po stejných zastávkách a~zastávky samotné.
+    
+    Jak jsme jíž zmínili v~sekci~\ref{raptor-data}, je nutné, abychom  obsažené jízdy udržovali uspořádané. K~tomu slouží metoda \textbf{SortTrips}.
+\end{itemize}
+
+\subsubsection{Fáze stavby datových struktur}
+
+\begin{itemize}
+    \item Inicializace
+    
+    Při inicializaci nastavujeme počáteční datum a~dobu platnosti dat z~jízdních řádů. Doba platnosti je vždy omezená a~dá se nastavit skrze konfigurační soubor.
+    
+    Po přidání zastávek dále inicializujeme \textbf{StopPositionLimits} a~stavíme \textbf{stopsInRTree}.
+    
+    Do vlastnosti \textbf{StopPositionLimits} ukládáme souřadnice obdélníku, který ohraničuje všechny zastávky. Toho využijeme později při vizualizaci.
+    
+    Strukturu \textbf{stopsInRTree} stavíme pro optimálnější vyhledávání, viz sekce~\ref{optim-sousedi}.
+    
+    \item Přidání zastávek --- metoda \textbf{AddStops}
+    
+    V~této fázi jen ukládáme zastávky z~dat jízdních řádů.
+    
+    \item Přidání tras --- metoda \textbf{AddRoutes}
+    
+    Během přidávání tras přidáváme také jízdy, které patří pod jednotlivé trasy.
+    
+    Jízdy vytváříme spojením dat z~různých souborů formátu GTFS pomocí klíčů. Konkrétně spojujeme \textbf{Calendar}, \textbf{CalendatDate} a~\textbf{Trips} přes klíč \textbf{service\_id} a~výsledek dále spojujeme se \textbf{StopTimes} přes klíč \textbf{trip\_id}. Vytvořené jízdy přidáváme do tras dle jednoznačného identifikátoru.
+    
+    Každá vytvořená jízda obsahuje \textbf{route\_id}. To samotné však k~jednoznačné identifikaci trasy nestačí, neboť definice GTFS trasy se liší od námi definované trasy. Jak jsme již zmiňovali v~kapitole~\ref{data-terminologie}, GTFS trasa může obsahovat jízdy, které jezdí přes různé zastávky.
+    
+    Abychom přiřadili jízdu pod správnou trasu, vygenerujeme si jednoznačný identifikátor trasy pomocí metody \textbf{GetRouteKey}, která jej generuje dle \textbf{route\_id} a~\textbf{id} každé ze zastávek na trase.
+    
+    Tato metoda pro každou trasu navíc vytváří \textbf{RouteStops}. Tedy seznam všech zastávek, přes které daná trasa vede.
+    
+    \item Přidání StopRoutes
+    
+    Metoda \textbf{AddStopRoutes} přidává pro každou zastávku seznam všech tras, které přes zastávku jezdí. Toto přidání nelze provést už při volání metody \textbf{AddStops}, neboť v~tu chvíli ještě nemáme uložené trasy.
+    
+    \item Odebrání nepoužitých zastávek
+    
+    Ukázalo se, že přinejmenším v~datech společnosti PID existují zastávky, přes které nevedou žádné trasy. Takové zastávky chceme odstranit, neboť zbytečně zpomalují výpočet. Samotné odstranění obstarává metoda \textbf{RemoveUnusedStops}.
+    
+    \item Generování přestupů\label{generovani-prestupu}
+    
+    Ke generování přestupů slouží metoda \textbf{GenerateTransfers}. Vzdálenost přestupů jsme omezili konstantou \textbf{MAX\_TRANSFER\_DISTANCE} a~rychlost přestupu určujeme konstantou \textbf{WALKING\_SPEED}. Obě konstanty jsou nastavitelné v~konfiguračním souboru.
+    
+    Pro hledání blízkých zastávek, mezi kterými definujeme přestupy, využíváme optimalizaci, popsanou v~sekci~\ref{optim-sousedi}. Bez využití optimalizace jsme nuceni porovnávat všechny dvojice zastávek a~to je velice neefektivní. Metoda \textbf{GenerateTransfers} je sice volaná maximálně jednou za běh programu, generování přestupů je však ze všech fází výpočetně nejnáročnější a~zvláště pro velké datasety je tato optimalizace nepostradatelná.
+    
+    Vzdálenost mezi zastávkami, pro zjednodušení, určujeme jako vzdálenost vzdušnou čarou. Možné zlepšení navrhujeme v~sekci~\ref{optim-prestupy}.
+    
+    Pro správné fungování vyhledávače je nutné, aby byly přestupy tranzitivní. Toho jsme docílili tak, že se na zastávky a~přestupy mezi nimi díváme jako na vrcholy a~hrany grafu. V~takovém grafu následně hledáme, pomocí DFS~(Depth-first search), komponenty silné souvislosti. Každá taková komponenta tvoří množinu zastávek, mezi kterými existují tranzitivní přestupy.
+\end{itemize}
+
+\subsubsection{Ukládání dat}
+
+Stavba datových struktur, zejména generování přestupů, zabírá netriviální dobu při spouštění programu. Abychom nemuseli struktury opakovaně stavět při každém startu programu, bylo by vhodné si je někam uložit.
+
+\begin{enumerate}
+    \item Databáze
+
+    Jednou z~možností datového úložiště je databáze. Při vyhledávání spojů však potřebujeme pracovat se všemi daty, dotazovat se vždy databáze by bylo příliš nepraktické. Navíc se dá předpokládat, že data jízdních řádů se vejdou do paměti.
+    
+    Databázi bychom mohli používat jen pro načtení dat při startu aplikace. Pak ale plně nevyužíváme výhody poskytované databází, mimo jiné proto, že data chceme pouze číst, ne do nich zapisovat. Samotná databáze nám tedy do aplikace zavádí zbytečnou složitost.
+    
+    \item Serializace
+    
+    Vhodnou alternativou k~databázi je serializace do souboru. Datové struktury postavíme jen jednou, při aktualizaci dat jízdních řádů a~serializujeme je. Následující spuštění aplikace deserializují datové struktury a~tím urychlí spouštění aplikace.
+\end{enumerate}
+
+V~naší aplikaci jsme pro ukládání dat použili serializaci do souboru. Data serializujeme do formátu JSON (JavaScript Object Notation). Jako serializační knihovnu jsme použili knihovnu \textbf{JSON.NET}, která oproti standardní serializaci poskytuje mnoho výhod. Dokáže například serializovat data s~cyklickými referencemi.
+
+Samotná deserializace ze souboru však není příliš rychlá. Konkrétně, stavba \textbf{StopRoutes} je časově méně náročná, než jejich deserializace. Stavba \textbf{RouteStops} by mohla být také rychlejší než deserializace, museli bychom ji však nejprve oddělit od metody \textbf{AddStopRoutes}.
+
+Při deserializaci velkých datasetů může docházet k~překročení maximální hloubky zanoření dat, serializovaných ve formátu JSON. Tu je však možné nastavit v~deserializačním konstruktoru.
+
+\subsubsection{Práce s~kalendářem}
+
+Naše prvotní implementace pracovala s~časem jako s~počtem sekund ve dni, stejně jako je to popsané v~článku \citep{raptor}. To se však ukázalo jako velice nepraktické. Nejen, že je reprezentace času jako čísla nevhodná. Tato reprezentace navíc neumožňovala rozlišení dnů ve kterých spoje jezdí, ani práci se spoji jedoucími přes půlnoc.
+
+Rozhodli jsme se tedy čas reprezentovat ve strukturách k~tomu určených. Těmi jsou v~jazyku C\# \textbf{DateTimeOffset} a~\textbf{TimeSpan}. Tato reprezentace umožnila rozlišení jednotlivých dnů a~dokonce i~práci s~výjimkami v~jízdních řádech. Vyřešila také spoje jedoucí přes půlnoc, neboť k~takovému spoji lze jednoduše přičíst den.
+
+% chybi popis class Calendar - neni prilis zajimave
+
+Tento přístup však může mít i~nevýhody. Jako hlavní nevýhodu můžeme chápat složitější zadávání vstupu uživatelem v~případě, že uživatel pracuje přímo s~touto reprezentací, což se v~naší webové aplikaci děje.
+
+Tato nevýhoda by se dala vyřešit abstrakcí uživatele od naší implementace. Problém ale je, jak by tato abstrakce měla vypadat. Pokud bychom nechali uživatele pracovat jen s~jednotlivými dny, není jasné, zdali tyto dny mají reprezentovat běžný den, či sváteční den. Navíc bychom, například pro prázdniny, museli pracovat se staršími daty, neboť jízdní řády v~takovém období bývají značně pozměněné.
+
+Cenou za abstrakci by tedy byla práce s~nepřesnými či neaktuálními daty jízdních řádů. To však nechceme. Necháme tedy uživatele pracovat s~konkrétními daty. 
+
+
+\subsection{Možné vylepšení}
+
+\subsubsection{Lepší generování přestupů}\label{optim-prestupy}
+
+V~této chvíli, během generování přestupů, měříme vzdálenost mezi zastávkami vzdušnou čarou. Tato vzdálenost, se však může velice odlišovat od vzdálenosti pěší chůzí. Příkladem mohou být například zastávky, které jsou sice poměrně blízko, jenže mezi nimi teče řeka. V~takovém případě se vzdálenost vzdušnou čarou může od pěší vzdálenosti lišit dramaticky.
+
+V~ideálním případě bychom k~měření pěší vzdálenosti využili existující navigaci. Přímo pro mapy OSM bychom mohli použít některou z~navigací zmíněných na stránce \url{https://wiki.openstreetmap.org/wiki/Routing/offline\_routers}.
+
+\subsubsection{Optimálnější uložení dat}
+
+Datové struktury ukládající data ve třídě \textbf{timetable}, jsou psané v~objektově orientovaném stylu, neboť tento styl je dobře čitelný a~preferovaný v~prostředí jazyku C\#. Nevýhodou je však špatná datová lokalita, což vede k~více cache missům a~zpomaluje tak vyhledávání algoritmu RAPTOR.
+
+Možným řešením je reprezentovat data v~datových strukturách přesně tak, jak jsou popsány v~článku \citet[Appendix A]{raptor}.

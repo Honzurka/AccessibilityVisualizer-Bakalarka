@@ -1,0 +1,16 @@
+\chapter*{Závěr}
+\addcontentsline{toc}{chapter}{Závěr}
+
+V~této práci jsme chtěli ohodnotit všechna místa podle dostupnosti veřejnou dopravou. To se nám v~podstatě podařilo. Jediným možným nedostatkem je to, že počítáme dostupnost z~míst zadaných uživatelem na všechna ostatní místa, ale neřešíme již dostupnost v~opačném směru. Možné řešení tohoto problému jsme však navrhovali v~sekci~\ref{raptor-inverze}.
+Dostupnost jsme chtěli vizualizovat na všech místech. Nám se podařilo vizualizovat dostupnost pro body v~daném rozlišení. Pro větší území potřebujeme počítat dostupnost v~bodech ve větším rozlišení. Avšak předvýpočet spojený s~vyhodnocováním bodů může být pro velké rozlišení neprakticky dlouhý.
+Jak jsme plánovali, výsledná aplikace je schopna pracovat s~jízdními řády z~různých lokalit. Při práci s~velkými daty jízdních řádů, jako poskytuje například Německo, však začínáme mít výkonnostní problémy. %pridat ref?
+
+
+Výsledkem této práce je knihovna a~webová aplikace. Knihovnu lze využívat nezávisle na webové aplikaci a~nejspíše by se dala použít i~pro řešení jiných problémů, které by vyžadovaly ohodnocení dostupnosti veřejnou dopravou. Webová aplikace pracuje s~interaktivní mapou. Společně zpřístupňují naši knihovnu běžným uživatelům a~usnadňují orientaci ve výsledných dostupnostech. 
+
+
+Vedle optimalizací a~nápadů na zlepšení, zmíněných v~předchozích kapitolách, bychom v~budoucnu mohli rozšířit funkcionalitu naší aplikace.
+Naše aplikace by ve spojení s~cenovou mapou\footnote{Pro Prahu je cenová mapa dostupná na adrese \url{https://app.iprpraha.cz/apl/app/cenova-mapa/}} mohla vypočítávat poměr dostupnosti a~ceny pozemku.
+Pokud bychom měli přístup k~právě pronajímaným či prodávaným nemovitostem, mohli bychom je seřadit dle dostupnosti nebo bychom mohli opět určovat poměr dostupnosti a~ceny.
+Aplikaci bychom mohli rozšiřovat i~jiným směrem.
+Některé lidi by vedle dostupnosti veřejnou dopravou mohlo zajímat, v~jaké vzdálenosti od daného místa jsou nemocnice, školy, obchody a~další často navštěvované budovy. Takovéto budovy bychom mohli vyhledat například pomocí dotazů v~jazyce SPARQL (SPARQL Protocol and RDF Query Language) na stránce wikidat\footnote{Wikidata dotazy lze psát na adrese \url{https://query.wikidata.org/}}.

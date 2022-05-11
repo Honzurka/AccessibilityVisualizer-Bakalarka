@@ -1,0 +1,63 @@
+\chapter{Úpravy algoritmu RAPTOR}
+%pouzivam `RAPTORa` ale jinde jsem se toho spise zbavil ...
+%mozna bych mel prekontrolovat - upravoval jsem
+
+V~této kapitole si popíšeme, jak jsme upravili algoritmus RAPTOR popsaný v~kapitole~\ref{kapitola-2}.
+
+Následující úpravy nám pomohou řešit problémy, související s~vyhodnocováním dostupnosti, popsané v~sekci~\ref{problemyKReseni-dostupnost}.
+
+Vyřešíme problém:
+\begin{itemize}
+    \item Vyhledání cesty mezi 1 vstupní zastávkou a~všemi ostatními zastávkami
+\end{itemize}
+
+Navrhneme řešení problému:
+\begin{itemize}
+    \item Vyhledávání oběma směry.
+\end{itemize}
+
+
+\section{Námi provedené úpravy}
+
+\subsubsection{Zrušení cílového prořezávání}
+
+Optimalizace cílového prořezávání, popsaná v~sekci~\ref{raptor-optimalizace}, je vhodná, pokud hledáme pouze dobu příjezdu na cílovou zastávku. Pokud ale tuto optimalizaci nevyužijeme a~neurčíme dokonce ani cílovou zastávku, pak můžeme tento algoritmus využít k~výpočtu příjezdového času na všechny dostupné zastávky.
+
+\subsubsection{Spouštění algoritmu z~více počátečních zastávek} \label{raptor-vicePocatecnichZastavek}
+
+Pro zobecnění vstupní zastávky na místo budeme potřebovat vypočítat časy příjezdu ze zastávek v~okolí zadaného místa na všechny cílové zastávky. Toto zobecnění detailně popisujeme v~sekci~\ref{zobecneni-zadavaniMista}.
+
+Opakované spouštění algoritmu RAPTOR je velice neefektivní. Naštěstí se dá tento problém řešit mnohem jednodušeji úpravou algoritmu.
+
+Místo jedné počáteční zastávky spustíme RAPTORa na několika počátečních zastávkách. Počátečními zastávkami myslíme zastávky v~okolí zadaného místa. V~inicializaci označíme všechny počáteční zastávky a~každé zastávce nastavíme hodnotu \textbf{multilabelu} v~nulté iteraci na součet vstupního času a~času potřebnému k~příchodu na zastávku ze zadaného místa.
+
+\subsubsection{Hledání cest v~intervalu} \label{raptor-interval}
+%velka cast je z RAPTORa - nema byt v predchozi sekci
+
+Pro statisticky přesnější výpočty dostupnosti bychom chtěli spouštět RAPTORa opakovaně v~určitém intervalu. Opakované spouštění RAPTORa však vede k~násobnému zpomalení výpočtu. Řešením je upravená verze rRAPTOR detailně popsaná v~\citet[Sekce 4.2]{raptor}.
+
+Nevýhodou tohoto řešení je, že v~něm nemůžeme využít optimalizace lokálního prořezávání, popsaného v~sekci~\ref{raptor-optimalizace}. Použití položky s~dosavadním nejdřívějším příjezdem by vedlo ke ztrátě významu hodnot \textbf{multilabelu} v~jednotlivých iteracích, nemohli bychom tedy omezeným počtem iterací omezit počet přestupů. Navíc bychom tím porušili invariant.
+
+V~upravené verzi rRAPTOR spouštíme algoritmus postupně od posledního času v~intervalu k~prvnímu. Mezi jednotlivými spuštěními však zachováme hodnoty \textbf{multilabelu}. Navíc v~první fázi algoritmu smíme povolit jen propagaci příjezdových časů, které jsou dřívější, než příjezdové časy nastavené v~aktuální iteraci.
+
+Co je velice důležité a~v~původním článku není popsané, je vyhodnocování nejdřívějšího času příjezdu na zastávku. Jelikož se výpočty intervalu mohou lišit v~počtu iterací, není jasné, ve které iteraci se uchovává celkově nejdřívější čas příjezdu. Při vyhodnocování tedy musíme projít příjezdové časy \textbf{multilabelu} pro všechny iterace a~nejmenší z~časů je námi hledaným ohodnocením.
+
+Tato upravená verze vede ke zrychlení celkového výpočtu časů z~intervalu. Míra zrychlení závisí na časových odstupech v~intervalu a~na hustotě jízd. Pro hrubou představu jsme se při výpočtech dvou časů v~intervalu pěti minut dostali ze 2-násobného na zhruba 1,1-násobné zpomalení celkového času výpočtu.
+
+
+\section{Vyhledávání oběma směry}
+
+Chtěli bychom, aby vypočtená dostupnost na zastávkách byla symetrická. Tím myslíme to, že by měla být vypočtena nejen z~času, za který se ze zadaného místa dostaneme na cílové místo, ale i~z~času, za který se z~cílového místa dostaneme na zadané místo.
+
+Jízdní řády se zdají být poměrně symetrické. Mohlo by se tedy zdát, že opačný směr můžeme zanedbat. Není to však pravidlem.
+
+Jednoduchá záměna počátečního a~cílového místa není možná, neboť počátečních míst je mnohem méně než cílových míst. Následně by algoritmus RAPTOR musel počítat dostupnost z~každého cílového místa na všechna ostatní místa a~to není možné vypočítat v~rozumném čase.
+
+Tento problém bychom však mohli vyřešit inverzí chodu algoritmu RAPTOR.
+
+\subsubsection{\uv{Inverze} chodu algoritmu}\label{raptor-inverze}
+
+RAPTOR umí počítat jen s~časem výjezdu z~počáteční zastávky. Pokud bychom chtěli počítat s~časem dojezdu na cílovou zastávku, mohli bychom využít inverze chodu algoritmu.
+
+Inverze chodu je zde použita ve smyslu obrácení významu času. Takový RAPTOR by cestoval proti směru jízd a~hledal by navazující jízdy, které jedou dříve, než je zastávka navštívena.
+

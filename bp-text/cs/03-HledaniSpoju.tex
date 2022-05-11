@@ -1,0 +1,109 @@
+\chapter{Hledání cest}\label{kapitola-2}
+
+V~této kapitole řešíme problém hledání cesty mezi dvěma zastávkami, který jsme popsali již v~sekci~\ref{problemyKReseni-dostupnost}.
+
+Pro vyhledávání cest v~jízdních řádech potřebujeme nějaký algoritmus. Existující řešení spadají v~zásadě do dvou kategorií.
+
+\begin{enumerate}
+    \item Algoritmy řešící problém jako grafový. Hledání nejkratších cest v~jízdních řádech však není snadná úloha, neboť cestovat hromadnou dopravou se dá jen ve chvíli, kdy jede nějaký spoj. Existující přístupy pak musí řešit problém čekání na zastávce. Důsledkem toho je obecně pomalejší hledání.
+
+    \item Algoritmy neřešící problém jako grafový. Jedním z~hlavních zástupců této kategorie je algoritmus RAPTOR \citet{raptor}. Tento algoritmus nevyžaduje předzpracovaná data, každou trasu navštíví maximálně jednou a~dá se počítat paralelně. Navíc umožňuje omezit počet přestupů během výpočtu.
+\end{enumerate}
+
+\section{RAPTOR}
+
+\subsection{Data}\label{raptor-data}
+
+RAPTOR bude pracovat s~daty z~formátu GTFS. Nejprve je však musíme převést do datové struktury, která bude podporovat operace vyžadované algoritmem RAPTOR.
+
+Pro každou trasu si potřebujeme pamatovat zastávky, přes které trasa vede, uspořádané od první po poslední. Dále si chceme zapamatovat také jízdy, které jedou po trase, uspořádané od nejdřívější k~nejpozdější.
+
+Pro každou zastávku si uložíme všechny trasy, na kterých zastávka leží. Ke každé zastávce přiřazujeme \textbf{multilabel}, který pro každou iteraci obsahuje nejdřívější čas příjezdu.
+
+Dále si potřebujeme uložit přestupy, které musí být tranzitivní. Ty však nejsou součástí GTFS dat a~budeme si je tedy muset vygenerovat. Generování přestupů konkrétně popíšeme v~sekci~\ref{generovani-prestupu}.
+
+Budeme si chtít ukládat také seznam označených zastávek. Ten slouží k~optimálnějšímu procházení tras.
+
+\subsection{Popis algoritmu}\label{raptor-popisAlgo}
+
+RAPTOR je založený na metodě dynamického programování, pracuje tedy v~iteracích. Aktuální iteraci označujeme indexem $k$.
+
+Vstupem je počáteční zastávka, čas výjezdu a~cílová zastávka.
+
+Výstupem je cesta s~minimálním časem dojezdu skládající se z~maximálně $k$~jízd a~$k-1$~přestupů.
+
+Při výpočtu každé iterace dodržujeme invariant, že na začátku $k$-té~iterace jsou hodnoty \textbf{multilabelu} do indexu~$k-1$ správné.
+
+Začínáme inicializací. Nejdřívější časy příjezdu v~\textbf{multilabelu} každé zastávky nastavíme na nekonečno. Počáteční zastávku přidáme do seznamu označených zastávek. \textbf{Multilabel} v~nulté iteraci nastavíme na čas výjezdu ze vstupu. Aktuální iteraci nastavíme na~1.
+
+Dále pro každou iteraci provádíme následující tři fáze.
+\begin{enumerate}
+    \item V~první fázi propagujeme, v~rámci všech \textbf{multilabelů}, příjezdové časy z~předchozí iterace do aktuální iterace. Tím nastavíme horní mez pro příjezd v~této iteraci.
+    
+    Dále projdeme označené zastávky a~uložíme si množinu označených tras, které obsahují označenou zastávku. Pro každou označenou trasu si navíc pamatujeme zastávku skrze kterou byla trasa označena. Pokud označujeme již označenou trasu, zapamatujeme si tu zastávku, která leží blíže začátku trasy.
+    
+    Vyprázdníme seznam označených zastávek, abychom v~následující iteraci procházeli jen nově označené zastávky.
+    
+    \begin{code}
+foreach stop:
+  stop.multilabel[k] = stop.multilabel[k-1]
+
+  foreach markedStop in markedStops:
+    foreach route in markedStop.Routes:
+      markedRoutes.addOrUpdate(route, markedStop)
+  
+  markedStops.clear()
+    \end{code}
+    
+    \item Ve druhé fázi projdeme všechny označené trasy.
+    
+    Postupně procházíme zastávky na trase, od první označené, dokud nenarazíme na zastávku pro kterou máme definovanou nejdřívější jízdu. Jednodušeji řečeno, hledáme jízdu na kterou můžeme přestoupit, neboli jízdu, ve které z~aktuální zastávky odjíždíme poději, než na ni přijedeme v~$k-1$~iteraci.
+    
+    Následně projdeme všechny zbylé zastávky a~pokusíme se aktualizovat čas příjezdu na tyto zastávky s~využitím právě nalezené nejdřívější jízdy.
+    
+    Mohlo se nám však stát, že jsme v~$k-1$~iteraci přijeli na některou ze zastávek dříve, než kdy na ni přijedeme aktuálně nejdřívější jízdou. Z~takové zastávky se musíme znovu pokusit nalézt nejdřívější jízdu.
+
+    \begin{code}
+foreach (route, markedStop) in markedRoutes:
+  # find earliest trip
+  foreach stop on route (in order) beginning from markedStop:
+    foreach trip on route (in order):
+        if(stop.multilabel[k-1] < trip.departureTimeFrom(stop)):
+          currentStop = stop
+          currentTrip = trip
+          break
+
+    foreach stop on route (in order) beginning from currentStop:
+      currentTrip = tryFindEarliestTripThan(currentTrip)
+      stop.updateMultilabelByTrip(currentTrip) #marks updated
+    \end{code}
+
+    \item Ve třetí fázi využijeme přestupy z~nově označených zastávek. Každým přestupem se pokusíme aktualizovat čas příjezdu na zastávku, na kterou přestupujeme.
+    
+    \begin{code}
+foreach markedStop:
+  foreach transfer from markedStop:
+    transfer.targetStop.updateMultilabelByTransfer()#marks updated
+    \end{code}
+\end{enumerate}
+
+Aktualizací času myslíme zápis příjezdového času do \textbf{multilabelu} pro $k$-tou~iteraci. Při úspěšné aktualizaci příjezdového času na zastávku ve druhé a~třetí fází zastávku označujeme.
+
+Algoritmus se zastaví v~případě, že dosáhl omezení počtu iterací, nebo pokud v~první fází neexistují žádné označené zastávky, tedy není co vylepšovat.
+
+
+\subsection{Zrychlení algoritmu}
+
+\subsubsection{Optimalizace}\label{raptor-optimalizace}
+
+RAPTOR popsaný v~\citet{raptor} navíc využívá optimalizace \textbf{lokální prořezávání} a~\textbf{cílové prořezávání}.
+
+\begin{itemize}
+    \item Optimalizace \textbf{lokálního prořezávání} zavádí navíc pro každou zastávku položku, jenž obsahuje dosavadní nejdřívější čas příjezdu. Díky této optimalizaci nemusíme v~první fázi algoritmu propagovat příjezdové časy. K~zápisu příjezdových časů do \textbf{multilabelu} tedy dochází jen ve chvíli, kdy časy aktualizujeme. Vypozorovali jsme, že tato optimalizace vede ke zhruba $5\%$ zrychlení vyhledávání.
+    
+    \item Optimalizace \textbf{cílového prořezávání} spočívá v~tom, že neoznačujeme zastávky s~příjezdovým časem vyšším než je aktuální příjezdový čas na cílové zastávce.
+\end{itemize}
+
+\subsubsection{Paralelizace}\label{raptor-paralelizace}
+
+Algoritmus je možné zrychlit paralelizací viz \citet[Sekce 3.3]{raptor}. Konkrétně se jedná o~paralelizaci druhé fáze algoritmu, která je časově nejnáročnější.

@@ -1,0 +1,136 @@
+\chapter{Zobecnění Vyhledávání}\label{kapitola-3}
+
+V~této kapitole vyřešíme zbylé problémy s~vyhodnocováním dostupnosti ze sekce~\ref{problemyKReseni-dostupnost}:
+\begin{itemize}
+    \item Zobecnění vstupní zastávky na místo.
+
+    \item Zobecnění cílové zastávky na místo.
+
+    \item Zadávání více vstupních zastávek.
+    
+    \item Vyhodnocování dostupnosti pro časový interval.
+\end{itemize}
+
+
+\section{Zobecnění vstupní zastávky na místo}\label{zobecneni-zadavaniMista}
+
+Pro zobecnění vstupní zastávky na místo potřebujeme vypočítat dostupnost ze všech zastávek v~okolí vstupního místa na všechny dostupné zastávky. Zastávky v~okolí vstupního místa jsou ty, na které jsme schopni přijít pěšky a~odjet z~nich nějakým spojem.
+
+Dostupnost ze vstupního místa na cílovou zastávku je rovna součtu doby strávené chůzí na zastávku v~okolí, času, kdy čekáme na příjezd spoje, a~doby jízdy z~této zastávky na cílovou zastávku. Pro každou cílovou zastávku navíc bereme právě minimální dostupnost ze všech dostupností vypočtených ze zastávek v~okolí vstupního místa.
+
+Problém však je, že zastávek v~okolí vstupního místa může být mnoho a~následné spouštění algoritmu RAPTOR z~každé této zastávky je velice výpočetně náročné.
+
+Dále popíšeme naše přístupy k~optimalizaci výpočtu.
+
+\subsubsection{Výběr $k$-nejbližších sousedů}
+
+Výběrem $k$-nejbližších sousedů snížíme počet sousedních zastávek a~tím urychlíme výpočet.
+
+Pro místa s~velkou hustotou zastávek však mohou být výsledky velice nepřesné, neboť zanedbáváme velké množství zastávek, které sice nepatří mezi nejbližší, ale jsme schopni na ně dojít pěšky.
+
+Navíc nevyužíváme vlastnosti, že přes blízko položené zastávky často jezdí stejné spoje.
+
+\subsubsection{Rozdělení zastávek do ekvivalenčních tříd}
+
+Definujeme relaci ekvivalence pro zastávky dle spojů, které přes tyto zastávky jezdí. Do stejné ekvivalenční třídy tedy umístíme všechny zastávky, přes které jezdí stejné spoje.
+
+Dále z~každé ekvivalenční třídy vybereme jednoho reprezentanta, např. takovou zastávku, která je nejblíže k~zadanému místu.
+
+Seznam všech reprezentantů tvoří zastávky v~okolí, ze kterých nám stačí spouštět výpočet.
+
+Toto řešení sice eliminuje některé zastávky, ukázalo se však, že výsledný počet zastávek je stále příliš vysoký.
+
+\subsubsection{(Minimální) pokrytí množiny}
+
+V~tomto přístupu máme množinu zastávek z~okolí zadané zastávky a~chceme najít podmnožinu této množiny takovou, že sjednocení všech spojů jedoucích přes zastávky množin budou ekvivalentní.
+
+Tento problém lze řešit výpočtem minimálního pokrytí množiny. To je sice NP-úplný problém, my si však vystačíme s~aproximačním algoritmem, který tento problém řeší v~polynomiálním čase.
+
+Výsledky tohoto přístupu jsou lepší než ty, ke kterým vedly předchozí přístupy. Algoritmus RAPTOR je však stále spouštěn pro každou zastávku zvlášť, přestože trasy které algoritmem procházíme se značně překrývají.
+
+\subsubsection{RAPTOR spuštěn s~více počátečními zastávkami}\label{raptor-zobecneni-vicePocatecnichZastavek}
+
+Úprava, popsaná v~kapitole~\ref{raptor-vicePocatecnichZastavek}, nám umožňuje označit za počáteční zastávky všechny zastávky z~okolí zadaného místa.
+
+To znamená, že si vystačíme s~jediným spuštěním algoritmu RAPTOR a~bez znatelného zpomalení běhu algoritmu.
+
+
+\section{Zobecnění cílové zastávky na místo}\label{zobecneni-ciloveZastavkyNaMista}
+
+Vyhledávání příjezdového času z~jednoho zadaného místa na libovolné místo, které je v~pěší vzdálenosti od dostupných zastávek, lze řešit minimálně následujícími dvěma způsoby.
+
+\subsubsection{Rozdělení mapy na segmenty}
+
+Mapu rozdělíme na segmenty. Pro každý segment určíme zastávku ze které aproximujeme, v~závislosti na rychlosti chůze, dojezdové časy do ostatních míst v~segmentu.
+
+Pokud bychom zvolili segmenty stejné velikosti, měli bychom buď příliš mnoho segmentů, nebo by výpočty pro lokality s~velkou hustotou zastávek nebyly příliš přesné. Ideální by tedy bylo mít segmenty různě velké, v~závislosti na hustotě zastávek.
+
+Tento přístup se zdá být z~pohledu implementace poměrně složitý, navíc aproximace v~rámci segmentu nemusí dávat dostatečně přesné výsledky.
+
+\subsubsection{Využití zastávek z~okolí}
+
+Tento způsob je podobný přístupu, popsanému v~úvodu sekce~\ref{zobecneni-zadavaniMista}. 
+
+Podíváme se na dostupnosti na zastávkách v~okolí cílového místa a~přičteme k~nim čas, za který se z~těchto zastávek dostaneme pěšky do cílového místa. Minimem z~vypočítaných dostupností pak ohodnotíme cílové místo.
+
+
+\section{Zadávání více vstupních míst}\label{zobecneni-viceVstupnichMist}
+
+Dostupnost pro více míst umíme vypočítat spuštěním algoritmu RAPTOR pro každé ze zadaných míst. Dostupnosti vypočtené ze zadaných míst potřebujeme agregovat, abychom získali jednu dostupnost pro každé cílové místo.
+
+Jako agregační funkci zvolíme vážený průměr, neboť očekáváme že naše uživatele bude zajímat právě průměrná dostupnost. Navíc jim tak umožníme určovat důležitost vstupních míst.
+
+Agregaci lze však korektně použít jen pro zastávky, neboť pro každé vstupní místo může existovat jiná zastávka z~okolí cílového místa, přes kterou na cílové místo dojdeme pěšky.
+
+Kdybychom nejdříve agregovali dostupnost zastávek a~až poté počítali dostupnost na cílovém místě, nebyly by vypočtené výsledky korektní, neboť bychom na cílové místo docházeli jen z~jedné ze zastávek v~okolí.
+
+Pro výpočet dostupnosti na cílovém místě tedy musíme nejprve vypočítat dostupnost z~jednotlivých vstupních míst. Až poté můžeme dostupnost agregovat.
+
+
+\section{Přesnější výsledky výpočtem dostupnosti v~intervalu}\label{zobecneni-dostupnostVIntervalu}
+
+Aktuální způsob výpočtu dostupnosti má tu nevýhodu, že nezohledňuje frekvenci jízd. 
+V~případě, že se zadaným časem trefíme přesně do odjezdu jízdy, která jede jen jednou za hodinu, můžeme dostat lepší dostupnost než z~jízdy která jezdí každých 10 minut, jenže na ni musím v~daném čase 9 minut čekat.
+
+Pro zohlednění frekvence jízd při výpočtu dostupnosti využijeme několika výpočtů dostupnosti v~intervalech okolo zadaného času. Následným výpočtem průměru z~dostupností se zbavíme nadhodnocení jízd s~nízkou frekvencí odjezdů.
+
+Správná volba délky intervalu je klíčová. Pokud bychom zvolili délku intervalu příliš krátkou, stal by se opakovaný výpočet příliš náročným. V~případě, že naopak zvolíme délku intervalu příliš dlouhou, může se stát že výsledky nebudou příliš užitečné.
+
+Dále se potřebujeme vyhnout situaci, kdy je délka intervalu stejná jako perioda jízd.
+
+Následující dvě řešení volby délky intervalu se jeví jako použitelná.
+
+\begin{enumerate}
+    \item Zvolíme tak krátký interval, aby dokázal zastihnout většinu odjezdů, ale ne kratší. Jako vhodná délka takového intervalu se ukázala být jedna minuta, neboť takové časové rozlišení je používáno v~jízdních řádech.
+    
+    \item Zvolíme delší interval, například pětiminutový. V~tomto intervalu určíme náhodnou minutu pro níž budeme dostupnost počítat. Toto řešení snižuje počet potřebných výpočtů a~vyhýbá se situaci, kdy je délka intervalu stejná jako perioda jízd.
+\end{enumerate}
+
+Při implementaci budeme chtít využít optimalizace algoritmu RAPTOR pro vyhledávání v~intervalu, viz sekce~\ref{raptor-interval}. Vzhledem ke zrychlení, které nám tato optimalizace přináší, není problém spouštět RAPTORa opakovaně pro intervaly délky jedna minuta.
+
+
+\section{Efektivní hledání zastávek z~okolí}\label{optim-sousedi}
+
+K~řešení předchozích problémů často používáme zastávky z~okolí jiné zastávky. Triviální řešení, které porovnává vzdálenosti mezi všemi dvojicemi zastávek, je příliš pomalé.
+
+Tento problém se obecně nazývá \textbf{Range searching} a~existuje mnoho přístupů, které ho řeší. My jsme zvažovali následující přístupy:
+\begin{enumerate}
+    \item \textbf{Quad-tree}. Poměrně dobré řešení.
+    \item \textbf{Spatial hashing}. Horší než \textbf{quad-tree} pro velké množství objektů, pro detailní porovnání viz \citet{QuadtreeVSSpatial}.
+    \item \textbf{Binary space partitioning}. Vhodné spíše pro různorodé tvary objektů, viz \url{https://stackoverflow.com/a/26517609/17686273}. Pro hledání sousedních zastávek se spíše nehodí.
+    \item \textbf{R-tree}. Lepší než quad-tree, zejména pro hledání sousedů v~daném okolí, pro detailní porovnání viz \citet{quadTreeVSRTree}.
+\end{enumerate}
+
+Nejlepším řešením našeho problému se ukázal být \textbf{R-tree}. Abychom si ušetřili práci, chtěli bychom najít již hotovou implementaci této datové struktury. Pro jazyk C\# se nabízí knihovna \textbf{Rbush}. Tato knihovna implementuje datovou strukturu \textbf{R-tree}, společně s~dalšími optimalizacemi.
+
+Složitost nalezení sousedních zastávek pro danou zastávku byla, za použití triviálního řešení, $O(n)$. Po optimalizaci se v~průměrném případě dostáváme na složitost $O(\log_{}n)$.
+%realne zrychleni jen ~10x??
+
+
+\section{Alternativní řešení}
+
+Alternativou k~předchozím krokům by mohlo být takzvané unrestricted walking, popsané v~článku \citet{unrestrictedWalking}.
+
+Jedná se o~rozšíření algoritmu RAPTOR o~neomezené přecházení mezi zastávkami. Algoritmus může umožnit nalezení tras rychlejších o~zhruba deset procent za cenu zhruba šestinásobného zpomalení výpočtu a~předvýpočtu přechodů pomocí techniky hub labeling, trvajícího několik hodin.
+
+Původní řešení sice počítá jen s~přestupy do 100 metrů, mohlo by se však podařit prodloužit tuto vzdálenost na jednotky kilometrů a~tím umožnit vyhledávání z~libovolného místa na všechna dostupná místa.
